@@ -11,7 +11,7 @@
 	<body>
 		<div class="jumbotron" style="position: absolute; top: 10%; left: 20%; width: 60%;">
 			<h1 style="text-align: center;">Свяжитесь с нами!</h1>
-		<form action="./management/application-manage.php" id="application_org">
+		<form action="./management/application-handler.php" id="application_org">
   			<div class="form-group">
     			
     			<label for="applicant_name">Имя:</label><input type="text" class="form-control form-control-sm" name="applicant_name" id="applicant_name" required>

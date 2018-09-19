@@ -1,5 +1,5 @@
 $(document).ready(function (){
-    $("#application_org").submit(function(e) {
+    $("#login_form").submit(function(e) {
     
     
         var form = $(this);
@@ -11,7 +11,12 @@ $(document).ready(function (){
                dataType: 'json',
                success: function(data)
                {
+                  if (data['success'] === true){
                    alert(data['message']); // show response from the php script.
+                   location.reload()
+                  } else {
+                    alert(data['message']); // show response from the php script.
+                  }
                }
              });
     
