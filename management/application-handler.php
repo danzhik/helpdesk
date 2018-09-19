@@ -24,8 +24,8 @@ function add_application(){
 
 	$sql = $db->query("SELECT `id`, `active_applications` FROM `users`");
 
+	$max = 10000;
 	while ($row = $sql->fetch_assoc()){
-		$max = 10000;
 
 		if ($row['active_applications'] < $max){
 			$max = $row['active_applications'];
@@ -35,13 +35,14 @@ function add_application(){
 
 	$sql = "INSERT INTO `applications` 
 		(application_theme, applicant_name, applicant_address, applicant_phone, application_text, creation_date, application_status, assigned_employee) 
-		VALUES ('$application_theme', '$applicant_name', '$applicant_address', '$applicant_phone', '$application_text', '$creation_date', $application_status), $employee_id";
+		VALUES ('$application_theme', '$applicant_name', '$applicant_address', '$applicant_phone', '$application_text', '$creation_date', $application_status, $employee_id)";
 
-	var_dump($sql);
+
 	$response = [];
 
 	if ($db->query($sql) == true){
 		$response['message'] = 'Ваша заявка отправлена в обработку. Мы свяжемся с вами в ближайшее время!';
+		$db->query("UPDATE `users` SET active_applications = active_applications + 1 WHERE `id` = $employee_id");
 	} else {
 		$response['message'] = 'Ошибка при обработке вашей заявки...';
 	}
