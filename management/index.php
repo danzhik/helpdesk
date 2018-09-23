@@ -8,7 +8,11 @@ session_start();
 
 
 if (isset($_SESSION['user_id'])){
-	include_once './user-interface.php';
+	if ($_SESSION['user_id'] == 1){
+		include_once './user-interface-admin.php';
+	} elseif ($_SESSION['user_id'] > 0) {
+		include_once './user-interface.php';
+	}
 } else {
 	include_once './login.php';
 }

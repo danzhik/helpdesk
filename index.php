@@ -14,24 +14,18 @@
 		<form action="./management/application-handler.php" id="application_org">
   			<div class="form-group">
     			
-    			<label for="applicant_name">Имя:</label><input type="text" class="form-control form-control-sm" name="applicant_name" id="applicant_name" required>
-    		</div>
-    		<div class="form-group">
-    			<label for="applicant_address">Aдрес:</label><input type="text" class="form-control form-control-sm" name="applicant_address" id="applicant_address" required>
-    		</div>
-    		<div class="form-group">
-    			<label for="applicant_contact">Контактный телефон:</label><input type="text" class="form-control form-control-sm" name="applicant_contact" id="applicant_contact" required>
+    			<label for="applicant_name">Название организации:</label><input type="text" class="form-control form-control-sm" name="applicant_name" id="applicant_name" required>
     		</div>
     		<div class="form-group">
     			<label for="application_theme">Тема:</label><select class="form-control form-control-sm"  name="application_theme" id="application_theme">
-    					<option value="1">Обрыв кабеля</option>
-    					<option value="1">Потеря доступа</option>
+    					<option value="Обрыв кабеля">Обрыв кабеля</option>
+    					<option value="Потеря доступа">Потеря доступа</option>
     				  </select>
     		</div>
     		<div class="form-group">		  
     			<label for="application_content">Текст:</label><textarea class="form-control form-control-sm" name="application_content" id="application_content" placeholder="Введите текст заявки" required></textarea>
   			</div>
-  			<button type="submit" class="btn btn-primary">Submit</button>
+  			<button type="submit" class="btn btn-primary">Отправить</button>
 		</form>
 		</div>
 	</body>

@@ -15,8 +15,6 @@ function add_application(){
 	if(isset($_POST['applicant_name']) && isset($_POST['application_theme'])){
 
 	$applicant_name = htmlspecialchars($db->real_escape_string($_POST['applicant_name']));
-	$applicant_address = htmlspecialchars($db->real_escape_string($_POST['applicant_address']));
-	$applicant_phone = htmlspecialchars($db->real_escape_string($_POST['applicant_contact']));
 	$application_theme = htmlspecialchars($db->real_escape_string($_POST['application_theme']));
 	$application_text = htmlspecialchars($db->real_escape_string($_POST['application_content']));
 	$creation_date = date ('Y-m-d');
@@ -33,9 +31,24 @@ function add_application(){
 		}
 	}
 
-	$sql = "INSERT INTO `applications` 
-		(application_theme, applicant_name, applicant_address, applicant_phone, application_text, creation_date, application_status, assigned_employee) 
-		VALUES ('$application_theme', '$applicant_name', '$applicant_address', '$applicant_phone', '$application_text', '$creation_date', $application_status, $employee_id)";
+	$sql_org = $db->query("SELECT `organization_address`, `organization_contact` FROM `organizations` WHERE `organization_name` = '$applicant_name'");
+    
+	if ($sql_org->num_rows > 0) {
+
+		$row = $sql_org->fetch_assoc();
+		$address = $row['organization_address'];
+		$contact = $row['organization_contact'];
+
+		$sql = "INSERT INTO `applications` 
+			(application_theme, applicant_name, applicant_address, applicant_contact, application_text, creation_date, application_status, assigned_employee) 
+			VALUES ('$application_theme', '$applicant_name', '$address', '$contact',  '$application_text', '$creation_date', $application_status, $employee_id)";
+		
+	} else {
+
+		$sql = "INSERT INTO `applications` 
+			(application_theme, applicant_name, application_text, creation_date, application_status, assigned_employee) 
+			VALUES ('$application_theme', '$applicant_name', '$application_text', '$creation_date', $application_status, $employee_id)";
+	}
 
 
 	$response = [];

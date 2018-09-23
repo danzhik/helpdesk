@@ -26,7 +26,7 @@
     			
     			<label for="user_pass">Пароль:</label><input type="password" class="form-control form-control-sm" name="user_pass" id="user_pass" required>
     		</div>
-    		<button type="submit" class="btn btn-primary">Submit</button>
+    		<button type="submit" class="btn btn-primary">Войти</button>
     	</form>
     	</div>
     </body>
