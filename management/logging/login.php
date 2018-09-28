@@ -16,7 +16,7 @@
 	<body>
 		<div class="jumbotron" style="position: absolute; top: 10%; left: 20%; width: 60%;">
 			<h1 style="text-align: center;">Введите данные пользователя</h1>
-		<form action="./login-handler.php" method="post" id="login_form">
+		<form action="./logging/login-handler.php" method="post" id="login_form">
   			<div class="form-group">
     			
     			<label for="user_name">Логин:</label><input type="text" class="form-control form-control-sm" name="user_name" id="user_name" required>

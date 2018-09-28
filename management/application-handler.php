@@ -20,7 +20,7 @@ function add_application(){
 	$creation_date = date ('Y-m-d');
 	$application_status = 0;
 
-	$sql = $db->query("SELECT `id`, `active_applications` FROM `users`");
+	$sql = $db->query("SELECT `id`, `active_applications` FROM `users` WHERE `user_department` = 1");
 
 	$max = 10000;
 	while ($row = $sql->fetch_assoc()){
@@ -48,6 +48,7 @@ function add_application(){
 		$sql = "INSERT INTO `applications` 
 			(application_theme, applicant_name, application_text, creation_date, application_status, assigned_employee) 
 			VALUES ('$application_theme', '$applicant_name', '$application_text', '$creation_date', $application_status, $employee_id)";
+		$db->query("INSERT INTO `organizations` (organization_name) VALUES ('$applicant_name')");
 	}
 
 

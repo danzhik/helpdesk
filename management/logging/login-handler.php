@@ -1,7 +1,7 @@
 <?php
 
 // handling logging in attempts
-include_once '../config/db.php';
+include_once '../../config/db.php';
 session_start();
 
 /**
@@ -23,10 +23,10 @@ function attempt_login(){
 		$row = $sql->fetch_assoc();
 		$_SESSION['user_id'] = $row['id'];
 		$response['success'] = true;
-		$response['message'] = 'You logged in successfully!';
+		$response['message'] = 'Авторизация прошла успешно!';
 	} else {
 		$response['success'] = false;
-		$response['message'] = 'Incorrect login or password! Please try again.';
+		$response['message'] = 'Неправильный логин или пароль! Введите верные данные.';
 	}
 
 	echo json_encode($response);

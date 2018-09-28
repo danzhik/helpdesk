@@ -1,3 +1,4 @@
+<?php include_once './config/db.php'; ?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -17,10 +18,15 @@
     			<label for="applicant_name">Название организации:</label><input type="text" class="form-control form-control-sm" name="applicant_name" id="applicant_name" required>
     		</div>
     		<div class="form-group">
-    			<label for="application_theme">Тема:</label><select class="form-control form-control-sm"  name="application_theme" id="application_theme">
-    					<option value="Обрыв кабеля">Обрыв кабеля</option>
-    					<option value="Потеря доступа">Потеря доступа</option>
-    				  </select>
+    			<label for="application_theme">Тема:</label>
+                <select class="form-control form-control-sm"  name="application_theme" id="application_theme">
+                    <?php 
+                        $sql = $db->query("SELECT `id`, `theme_name` FROM `applications_themes`");
+                        while ($row = $sql->fetch_assoc()):
+                    ?>
+                        <option value="<?=$row['id']?>"><?=$row['theme_name']?></option>
+                    <?php endwhile; ?>
+    			</select>
     		</div>
     		<div class="form-group">		  
     			<label for="application_content">Текст:</label><textarea class="form-control form-control-sm" name="application_content" id="application_content" placeholder="Введите текст заявки" required></textarea>
