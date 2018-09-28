@@ -97,13 +97,16 @@ if(isset($_POST['updated_arch']) && isset($_POST['arch_app_id'])){
     		color: #444;
     	}
     	.nav-tab-wrapper{
-    		border-bottom: 1px solid #ccc;
+    		border-bottom: 1px solid #298de3;
     		margin: 0;
     		padding-top: 9px;
     		padding-bottom: 0;
     	}
     	.inactive{
     		display: none;
+    	}
+    	.active{
+    		padding-top: 1.5rem; 
     	}
 
     	.btn:focus, .btn:active {
@@ -218,6 +221,7 @@ if(isset($_POST['updated_arch']) && isset($_POST['arch_app_id'])){
 				<div class="form-group">
 				<label for="app_id">Заявка №</label>
 				<select id="app_id" name="app_id">
+					<option>Выбрать</option>
 					<?php foreach ($applications_ids as $id) { ?>
 						<option value="<?=$id?>"><?=$id?></option>
 					<?php } ?>
@@ -308,6 +312,7 @@ if(isset($_POST['updated_arch']) && isset($_POST['arch_app_id'])){
 				<div class="form-group">
 				<label for="arch_app_id">Заявка №</label>
 				<select id="arch_app_id" name="arch_app_id">
+					<option>Выбрать</option>
 					<?php foreach ($applications_ids as $id) { ?>
 						<option value="<?=$id?>"><?=$id?></option>
 					<?php } ?>

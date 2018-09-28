@@ -187,6 +187,7 @@ if(isset($_POST['updated_arch']) && isset($_POST['arch_app_id'])){
 			<div class="form-group">
 			<label for="app_id">Заявка №</label>
 			<select id="app_id" name="app_id">
+				<option>Выбрать</option>
 				<?php foreach ($applications_ids as $id) { ?>
 					<option value="<?=$id?>"><?=$id?></option>
 				<?php } ?>
@@ -279,6 +280,7 @@ if(isset($_POST['updated_arch']) && isset($_POST['arch_app_id'])){
 			<div class="form-group">
 			<label for="arch_app_id">Заявка №</label>
 			<select id="arch_app_id" name="arch_app_id">
+				<option>Выбрать</option>
 				<?php foreach ($applications_ids as $id) { ?>
 					<option value="<?=$id?>"><?=$id?></option>
 				<?php } ?>
