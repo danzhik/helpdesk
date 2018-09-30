@@ -4,7 +4,7 @@
 
 $user_id = $_SESSION['user_id'];
 
-if(isset($_POST['updated']) && isset($_POST['app_id'])){
+if(isset($_POST['updated_app']) && isset($_POST['app_id'])){
 
 	$app_id = $_POST['app_id'];
 
@@ -39,7 +39,7 @@ if(isset($_POST['updated']) && isset($_POST['app_id'])){
 		}
 	}
 
-	unset($_POST['updated']);
+	unset($_POST['updated_app']);
 }
 
 if(isset($_POST['updated_arch']) && isset($_POST['arch_app_id'])){
@@ -57,6 +57,104 @@ if(isset($_POST['updated_arch']) && isset($_POST['arch_app_id'])){
 
 	unset($_POST['updated_arch']);
 }
+
+if(isset($_POST['update_themes'])){
+
+	$data = [];
+	if (!empty($_POST['theme_name'])){
+		foreach($_POST['theme_name'] as $key=>$value){
+			$data[$key]['theme_name'] = htmlspecialchars($db->real_escape_string($value));
+		}
+	}
+	if (!empty($_POST['theme_solutions'])){
+		foreach($_POST['theme_solutions'] as $key=>$value){
+			$data[$key]['theme_solutions'] = htmlspecialchars($db->real_escape_string($value));
+		}
+	}
+	if (!empty($_POST['delete_theme'])){
+		foreach($_POST['delete_theme'] as $key=>$value){
+
+			unset($data[$key]);
+
+			$db->query("DELETE FROM `applications_themes` WHERE `id` = $key");
+		}
+	}
+
+	foreach ($data as $key => $values) {
+		$db->query("UPDATE `applications_themes` SET theme_name = '$values[theme_name]', theme_solutions = '$values[theme_solutions]' WHERE `id` = $key");
+	}
+
+	unset($_POST['update_themes']);
+}
+
+if(isset($_POST['add_theme']) && isset($_POST['theme_name_new'])){
+	$new_theme_name = htmlspecialchars($db->real_escape_string($_POST['theme_name_new']));
+	$new_theme_solutions = '';
+	if (isset($_POST['theme_solutions_new'])){
+		$new_theme_solutions = htmlspecialchars($db->real_escape_string($_POST['theme_solutions_new']));
+	}
+	
+	$db->query("INSERT INTO `applications_themes` (theme_name, theme_solutions) VALUES ('$new_theme_name', '$new_theme_solutions')");
+
+	unset($_POST['add_theme']);
+}
+
+if(isset($_POST['update_organizations'])){
+
+	$data = [];
+	if (!empty($_POST['organization_name'])){
+		foreach($_POST['organization_name'] as $key=>$value){
+			$data[$key]['organization_name'] = htmlspecialchars($db->real_escape_string($value));
+		}
+	}
+	if (!empty($_POST['organization_address'])){
+		foreach($_POST['organization_address'] as $key=>$value){
+			$data[$key]['organization_address'] = htmlspecialchars($db->real_escape_string($value));
+		}
+	}
+	if (!empty($_POST['organization_contact'])){
+		foreach($_POST['organization_contact'] as $key=>$value){
+			$data[$key]['organization_contact'] = htmlspecialchars($db->real_escape_string($value));
+		}
+	}
+	if (!empty($_POST['delete_organization'])){
+		foreach($_POST['delete_organization'] as $key=>$value){
+
+			unset($data[$key]);
+
+			$db->query("DELETE FROM `organizations` WHERE `id` = $key");
+		}
+	}
+
+	foreach ($data as $key => $values) {
+		$db->query("UPDATE `organizations` SET organization_address = '$values[organization_address]', organization_contact = '$values[organization_contact]' WHERE `id` = $key");
+
+		$db->query("UPDATE `applications` SET applicant_address = '$values[organization_address]', applicant_contact = '$values[organization_contact]' WHERE `applicant_name` = '$values[organization_name]'");
+	}
+
+	unset($_POST['update_organizations']);
+}
+
+if(isset($_POST['update_users'])){
+
+	unset($_POST['update_users']);
+}
+
+if (isset($_POST['add_user'])){
+
+	unset($_POST['add_user']);
+}
+
+if(isset($_POST['update_departments'])){
+
+	unset($_POST['update_departments']);
+}
+
+if (isset($_POST['add_department'])){
+
+	unset($_POST['add_department']);
+}
+
 
 ?>
 
@@ -121,11 +219,34 @@ if(isset($_POST['updated_arch']) && isset($_POST['arch_app_id'])){
 			$all_applications =  $db->query("SELECT * FROM `applications`");
 			$all_applications_archive =  $db->query("SELECT * FROM `applications_archive`");
 			$departments_query = $db->query("SELECT * FROM `departments`");
-			$themes_query = $db->query("SELECT `id`, `theme_name` FROM `applications_themes`");
+			$themes_query = $db->query("SELECT * FROM `applications_themes`");
+			$organizations_query = $db->query("SELECT * FROM `organizations`");
+			$users_query = $db->query("SELECT * FROM `users`");
 
 			$themes = [];
 			while ($row = $themes_query->fetch_assoc()){
-				$themes [$row['id']] = $row['theme_name'];
+				$themes [$row['id']]['theme_name'] = $row['theme_name'];
+				$themes [$row['id']]['theme_solutions'] = $row['theme_solutions'];
+			}
+
+			$organizations = [];
+			while ($row = $organizations_query->fetch_assoc()){
+				$organizations [$row['id']]['organization_name'] = $row['organization_name'];
+				$organizations [$row['id']]['organization_address'] = $row['organization_address'];
+				$organizations [$row['id']]['organization_contact'] = $row['organization_contact'];
+			} 
+
+			$users = [];
+			while ($row = $users_query->fetch_assoc()){
+				if ($row['id'] == 1){
+					continue;
+				}
+				$users [$row['id']]['user_name'] = $row['user_name'];
+				$users [$row['id']]['user_password'] = $row['user_password'];
+				$users [$row['id']]['real_name'] = $row['real_name'];
+				$users [$row['id']]['real_surname'] = $row['real_surname'];
+				$users [$row['id']]['personal_data'] = $row['personal_data'];
+				$users [$row['id']]['user_department'] = $row['user_department'];
 			} 
 
 			$departments = [];
@@ -200,7 +321,7 @@ if(isset($_POST['updated_arch']) && isset($_POST['arch_app_id'])){
 
 					$user_department = $departments[$user['user_department']]['name'];
 
-					$theme = $themes[$row['application_theme']];
+					$theme = $themes[$row['application_theme']]['theme_name'];
 
 					echo "<tr>
 							<td>$row[id]</td>
@@ -242,7 +363,7 @@ if(isset($_POST['updated_arch']) && isset($_POST['arch_app_id'])){
 				</select>
 				</div>
 				<button type="submit" class="btn btn-primary">Внести изменения</button>
-				<input type="hidden" name="updated" value="1">
+				<input type="hidden" name="updated_app" value="1">
 			</form><hr>
 			<h1 style="text-align: center;">Архив заявок</h1>
 			<table>
@@ -290,7 +411,7 @@ if(isset($_POST['updated_arch']) && isset($_POST['arch_app_id'])){
 					$user_name = $departments[$user['user_department']]['employees'][$row['assigned_employee']];
 					$user_department = $departments[$user['user_department']]['name'];
 
-					$theme = $themes[$row['application_theme']];
+					$theme = $themes[$row['application_theme']]['theme_name'];
 
 					echo "<tr>
 							<td>$row[id]</td>
@@ -325,18 +446,174 @@ if(isset($_POST['updated_arch']) && isset($_POST['arch_app_id'])){
 
 		<div class="inactive" id="themes_tab">
 			<h1 style="text-align: center;">Темы заявок</h1>
+			<form method="post">
+				<table>
+					<tr>
+						<th>ID</th>
+						<th>Тема</th>
+						<th>Способы решения</th>
+						<th>Удалить</th>
+					</tr>
+					<?php foreach ($themes as $key => $values) { ?>
+							<tr>
+								<td><?=$key?></td>
+								<td><input style="width: 100%" type="text" name="theme_name[<?=$key?>]" value="<?=$values['theme_name']?>"></td>
+								<td><input style="width: 100%" type="text" name="theme_solutions[<?=$key?>]" value="<?=$values['theme_solutions']?>"></td>
+								<td><input type="checkbox" name="delete_theme[<?=$key?>]" value="1"></td>
+							</tr>
+					<?php	} ?>
+				</table>
+				<br>
+				<input type="hidden" name="update_themes" value="1">
+				<button type="submit" class="btn btn-primary">Внести изменения</button>
+			</form>
+			<hr>
+			<h1 style="text-align: center;">Добавить новую тему</h1>
+			<form method="post">
+				<table>
+					<tr>
+						<th>Тема</th>
+						<th>Способы решения</th>
+					</tr>
+					<tr>
+						<td><input style="width: 100%" type="text" name="theme_name_new"></td>
+						<td><input style="width: 100%" type="text" name="theme_solutions_new"></td>
+					</tr>
+				</table>
+				<br>
+				<input type="hidden" name="add_theme" value="1">
+				<button type="submit" class="btn btn-primary">Добавить</button>
+			</form>
 		</div>
 
 		<div class="inactive" id="organizations_tab">
 			<h1 style="text-align: center;">Организации</h1>
+			<form method="post">
+				<table>
+					<tr>
+						<th>ID</th>
+						<th>Название</th>
+						<th>Адрес</th>
+						<th>Контакт</th>
+						<td>Удалить</td>
+					</tr>
+					<?php foreach ($organizations as $key => $values) { ?>
+							<tr>
+								<td><?=$key?></td>
+								<td><input type="hidden" name="organization_name[<?=$key?>]" value="<?=$values['organization_name']?>"><?=$values['organization_name']?></td>
+								<td><input style="width: 100%" type="text" name="organization_address[<?=$key?>]" value="<?=$values['organization_address']?>"></td>
+								<td><input style="width: 100%" type="text" name="organization_contact[<?=$key?>]" value="<?=$values['organization_contact']?>"></td>
+								<td><input type="checkbox" name="delete_organization[<?=$key?>]" value="1"></td>
+							</tr>
+					<?php	} ?>
+				</table>
+				<br>
+				<input type="hidden" name="update_organizations" value="1">
+				<button type="submit" class="btn btn-primary">Внести изменения</button>
+			</form>
 		</div>
 
 		<div class="inactive" id="users_tab">
 			<h1 style="text-align: center;">Пользователи</h1>
+			<form method="post">
+				<table>
+					<tr>
+						<th>ID</th>
+						<th>Логин</th>
+						<th>Пароль</th>
+						<th>Имя</th>
+						<th>Фамилия</th>
+						<th>Данные</th>
+						<th>Отдел</th>
+						<th>Удалить</th>
+					</tr>
+					<?php foreach ($users as $key => $values) { ?>
+							<tr>
+								<td><?=$key?></td>
+								<td><input style="width: 100%" type="text" name="user_name[<?=$key?>]" value="<?=$values['user_name']?>"></td>
+								<td><input style="width: 100%" type="text" name="user_password[<?=$key?>]" value="<?=$values['user_password']?>"></td>
+								<td><input style="width: 100%" type="text" name="real_name[<?=$key?>]" value="<?=$values['real_name']?>"></td>
+								<td><input style="width: 100%" type="text" name="real_surname[<?=$key?>]" value="<?=$values['real_surname']?>"></td>
+								<td><input style="width: 100%" type="text" name="personal_data[<?=$key?>]" value="<?=$values['personal_data']?>"></td>
+								<td>
+									<select name="user_department[<?=$key?>]">
+										<?php foreach($departments as $id => $department) { ?>
+												<option value="<?=$id?>" <?= $values['user_department'] == $id ? 'selected' : '' ?>><?=$department['name']?></option>
+										<?php } ?>
+									</select>
+								</td>
+								<td><input type="checkbox" name="delete_user[<?=$key?>]" value="1"></td>
+							</tr>
+					<?php	} ?>
+				</table>
+				<br>
+				<input type="hidden" name="update_users" value="1">
+				<button type="submit" class="btn btn-primary">Внести изменения</button>
+			</form>
+			<hr>
+			<h1 style="text-align: center;">Добавить нового пользователя</h1>
+			<form method="post">
+				<table>
+					<tr>
+						<th>Логин</th>
+						<th>Пароль</th>
+						<th>Имя</th>
+						<th>Фамилия</th>
+						<th>Данные</th>
+						<th>Отдел</th>
+					</tr>
+					<tr>
+						<td><input style="width: 100%" type="text" name="user_name_new"></td>
+						<td><input style="width: 100%" type="text" name="user_password_new"></td>
+						<td><input style="width: 100%" type="text" name="real_name_new"></td>
+						<td><input style="width: 100%" type="text" name="real_surname_new"></td>
+						<td><input style="width: 100%" type="text" name="personal_data_new"></td>
+						<td>
+							<select name="user_department_new">
+								<?php foreach($departments as $id => $department) { ?>
+										<option value="<?=$id?>"><?=$department['name']?></option>
+								<?php } ?>
+							</select>
+						</td>
+					</tr>
+				</table>
+				<br>
+				<input type="hidden" name="add_user" value="1">
+				<button type="submit" class="btn btn-primary">Добавить</button>
+			</form>
 		</div>
 
 		<div class="inactive" id="departments_tab">
 			<h1 style="text-align: center;">Отделы</h1>
+			<form method="post">
+				<table>
+					<tr>
+						<th>ID</th>
+						<th>Название</th>
+						<th>Удалить</th>
+					</tr>
+					<?php foreach ($departments as $key => $values) { ?>
+							<tr>
+								<td><?=$key?></td>
+								<td><input style="width: 100%" type="text" name="department_name[<?=$key?>]" value="<?=$values['name']?>"></td>
+								<td><input type="checkbox" name="delete_department[<?=$key?>]" value="1"></td>
+							</tr>
+					<?php	} ?>
+				</table>
+				<br>
+				<input type="hidden" name="update_departments" value="1">
+				<button type="submit" class="btn btn-primary">Внести изменения</button>
+			</form>
+			<hr>
+			<h1 style="text-align: center;">Добавить новый отдел</h1>
+			<form method="post">
+				<div class="form-group">
+    			
+    				<label for="department_name_new">Название:</label><input type="text" class="form-control form-control-sm" name="department_name_new" id="department_name_new" style="width: 30%">
+    			</div>	
+				<input type="hidden" name="add_department" value="1">
+				<button type="submit" class="btn btn-primary">Добавить</button>
+			</form>	
 		</div>
 
 		<?php else: ?>
