@@ -1,6 +1,6 @@
 <?php
 
-//interface and functionality for login page
+//интерфейс для формы авторизации
 
 ?>
 <!DOCTYPE html>

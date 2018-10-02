@@ -1,4 +1,4 @@
-<?php include_once './config/db.php'; ?>
+<?php include_once './config/db.php'; //file responsible for application form functionality?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -21,7 +21,9 @@
     			<label for="application_theme">Тема:</label>
                 <select class="form-control form-control-sm"  name="application_theme" id="application_theme">
                     <?php 
+                        //сбор даныхх для тем заявок из таблицы тем
                         $sql = $db->query("SELECT `id`, `theme_name` FROM `applications_themes`");
+                        // добаление опций для выбора темы в селектор
                         while ($row = $sql->fetch_assoc()):
                     ?>
                         <option value="<?=$row['id']?>"><?=$row['theme_name']?></option>
