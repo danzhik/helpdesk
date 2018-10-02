@@ -137,20 +137,108 @@ if(isset($_POST['update_organizations'])){
 
 if(isset($_POST['update_users'])){
 
+	$data = [];
+	if (!empty($_POST['user_name'])){
+		foreach($_POST['user_name'] as $key=>$value){
+			$data[$key]['user_name'] = htmlspecialchars($db->real_escape_string($value));
+		}
+	}
+	if (!empty($_POST['user_password'])){
+		foreach($_POST['user_password'] as $key=>$value){
+			if (strlen($value) > 25) {
+				$data[$key]['user_password'] = htmlspecialchars($db->real_escape_string($value));
+			} else {
+				$data[$key]['user_password'] = md5($value);
+			}
+		}
+	}
+	if (!empty($_POST['real_name'])){
+		foreach($_POST['real_name'] as $key=>$value){
+			$data[$key]['real_name'] = htmlspecialchars($db->real_escape_string($value));
+		}
+	}
+	if (!empty($_POST['real_surname'])){
+		foreach($_POST['real_surname'] as $key=>$value){
+			$data[$key]['real_surname'] = htmlspecialchars($db->real_escape_string($value));
+		}
+	}
+	if (!empty($_POST['personal_data'])){
+		foreach($_POST['personal_data'] as $key=>$value){
+			$data[$key]['personal_data'] = htmlspecialchars($db->real_escape_string($value));
+		}
+	}
+	if (!empty($_POST['user_department'])){
+		foreach($_POST['user_department'] as $key=>$value){
+			$data[$key]['user_department'] = htmlspecialchars($db->real_escape_string($value));
+		}
+	}
+	if (!empty($_POST['delete_user'])){
+		foreach($_POST['delete_user'] as $key=>$value){
+
+			unset($data[$key]);
+
+			$db->query("DELETE FROM `users` WHERE `id` = $key");
+		}
+	}
+
+	foreach ($data as $key => $values) {
+		$db->query("UPDATE `users` SET user_name = '$values[user_name]', user_password = '$values[user_password]', real_name = '$values[real_name]', real_surname = '$values[real_surname]', personal_data = '$values[personal_data]', user_department = '$values[user_department]' WHERE `id` = $key");
+	}
+
 	unset($_POST['update_users']);
 }
 
-if (isset($_POST['add_user'])){
+if (isset($_POST['add_user']) && isset($_POST['user_name_new']) && isset($_POST['user_password_new']) && isset($_POST['user_department_new'])){
+
+	$new_user_name = htmlspecialchars($db->real_escape_string($_POST['user_name_new']));
+	$new_user_password = htmlspecialchars($db->real_escape_string($_POST['user_password_new']));
+	$new_user_department = htmlspecialchars($db->real_escape_string($_POST['user_department_new']));
+	if (isset($_POST['real_name_new'])){
+		$new_real_name = htmlspecialchars($db->real_escape_string($_POST['real_name_new']));
+	}
+	if (isset($_POST['real_surname_new'])){
+		$new_real_surname = htmlspecialchars($db->real_escape_string($_POST['real_surname_new']));
+	}
+	if (isset($_POST['personal_data_new'])){
+		$new_personal_data = htmlspecialchars($db->real_escape_string($_POST['personal_data_new']));
+	}
+	
+	
+	$db->query("INSERT INTO `users` (user_name, user_password, real_name, real_surname, personal_data, user_department) VALUES ('$new_user_name', '$new_user_password', '$new_real_name', '$new_real_surname', '$new_personal_data', '$new_user_department')");
 
 	unset($_POST['add_user']);
 }
 
 if(isset($_POST['update_departments'])){
 
+	$data = [];
+	if (!empty($_POST['department_name'])){
+		foreach($_POST['department_name'] as $key=>$value){
+			$data[$key]['department_name'] = htmlspecialchars($db->real_escape_string($value));
+		}
+	}
+
+	if (!empty($_POST['delete_department'])){
+		foreach($_POST['delete_department'] as $key=>$value){
+
+			unset($data[$key]);
+
+			$db->query("DELETE FROM `departments` WHERE `id` = $key");
+		}
+	}
+
+	foreach ($data as $key => $values) {
+		$db->query("UPDATE `departments` SET department_name = '$values[department_name]' WHERE `id` = $key");
+	}
+
 	unset($_POST['update_departments']);
 }
 
-if (isset($_POST['add_department'])){
+if (isset($_POST['add_department']) && isset($_POST['department_name_new'])){
+
+	$new_department_name = htmlspecialchars($db->real_escape_string($_POST['department_name_new']));
+
+	$db->query("INSERT INTO `departments` (department_name) VALUES ('$new_department_name')");
 
 	unset($_POST['add_department']);
 }
