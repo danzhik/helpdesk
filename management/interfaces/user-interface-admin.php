@@ -1,29 +1,38 @@
 <?php
 
-//interface for organization (admin)
+//интерфейс администратора
 
-$user_id = $_SESSION['user_id'];
+$user_id = $_SESSION['user_id']; //id логгированаого пользователя (в данном случае всегда 1)
 
-if(isset($_POST['updated_app']) && isset($_POST['app_id'])){
+if(isset($_POST['updated_app']) && isset($_POST['app_id'])){ //в случае обновления данных по заявкам (для администратора только перевод на отдел/сотрудника)
 
-	$app_id = $_POST['app_id'];
+	$app_id = $_POST['app_id']; // id заявки, которая переводится
 
-	if (isset($_POST['new_app_depart']) && $_POST['new_app_depart'] != '-1'){
+	if (isset($_POST['new_app_depart']) && $_POST['new_app_depart'] != '-1'){ //выполнять запросы только если был выбран отдел
 		
+		// получаем id ответственного за зявку сотрудника
 		$employee_id = $db->query("SELECT `assigned_employee` FROM `applications` WHERE `id` = $app_id");
+
+		//выводим его id из запроса в ассоциативный массив и берем значение
 		$employee_id = $employee_id->fetch_assoc()['assigned_employee'];
 
-		if (!stripos($_POST['new_app_depart'], '_')){
+		if (!stripos($_POST['new_app_depart'], '_')){ // если был выбран конкретный сотрудник
 
+			// меняем отвественного сотрудника в таблице заявок
 			$db->query("UPDATE `applications` SET assigned_employee = $_POST[new_app_depart] WHERE `id` = $app_id");
+			// уменьшаем количество активных заявок для предыдущего сотрудника
 			$db->query("UPDATE `users` SET active_applications = active_applications - 1 WHERE `id` = $employee_id");
+			// увеличиваем количество активных заявок для нового сотрудника
 			$db->query("UPDATE `users` SET active_applications = active_applications + 1 WHERE `id` = $_POST[new_app_depart]");
-		} else {
+		} else { // если был выбран отдел и любой сотрудник в нем
 			
+			// получаем id отдела из запроса
 			$dep = substr($_POST['new_app_depart'], strpos('new_app_depart', '_')+1);
 			
+			// выбираем всех сотрудников и количество их активных заявок из таблицы сотрудников
 			$sql = $db->query("SELECT `id`, `active_applications` FROM `users` WHERE `user_department` = '$dep'");
 
+			// выбираем сотрудника с наименьшим количеством заявок
 			$max = 10000;
 			while ($row = $sql->fetch_assoc()){
 
@@ -33,116 +42,162 @@ if(isset($_POST['updated_app']) && isset($_POST['app_id'])){
 				}
 			}
 
+			// обновляем ответственного сотрудника в записи заявки
 			$db->query("UPDATE `applications` SET assigned_employee = '$new_employee_id' WHERE `id` = $app_id");
+			// уменьшаем количество активных заявок предыдущего сотрудника
 			$db->query("UPDATE `users` SET active_applications = active_applications - 1 WHERE `id` = $employee_id");
+			// увеличиваем количество активных заявок нового сотрудника
 			$db->query("UPDATE `users` SET active_applications = active_applications + 1 WHERE `id` = $new_employee_id");
 		}
 	}
 
-	unset($_POST['updated_app']);
+	unset($_POST['updated_app']); // удаляем индикатор обновления данных
 }
 
-if(isset($_POST['updated_arch']) && isset($_POST['arch_app_id'])){
+if(isset($_POST['updated_arch']) && isset($_POST['arch_app_id'])){ // в случае обновления архивных заявок (вывод из архива)
 
-	$arch_app_id = $_POST['arch_app_id'];
+	// получаем id обрабатываемой заявки
+	$arch_app_id = $_POST['arch_app_id']; 
 
+	// получаем id сотрудника, который был ответственным за эту заявку
 	$employee_id = $db->query("SELECT `assigned_employee` FROM `applications_archive` WHERE `id` = $arch_app_id");
+	// выводим данные запроса в ассоциативный массив и получаем оттуда значение id
 	$employee_id = $employee_id->fetch_assoc()['assigned_employee'];
 
+	// добавляем запись в таблицу активных заявок
 	$db->query("INSERT INTO `applications` SELECT * FROM `applications_archive` WHERE `id` = $arch_app_id");
+	// обнуляем дату решения заявки
 	$db->query("UPDATE `applications` SET execution_date = '0000-00-00' WHERE `id` = $arch_app_id");
+	// переводим статус заявки на "В работе"
 	$db->query("UPDATE `applications` SET application_status = '1' WHERE `id` = $arch_app_id");
+	// удаляем заявку из таблицы архивов
 	$db->query("DELETE FROM `applications_archive` WHERE `id` = $arch_app_id");
+	// увеличиваем счетчик активных заявок для сотрудника, к которому вернулась эта заявка
 	$db->query("UPDATE `users` SET active_applications = active_applications + 1 WHERE `id` = $employee_id");
 
-	unset($_POST['updated_arch']);
+	unset($_POST['updated_arch']); // удаляем индикатор обновления архива
 }
 
-if(isset($_POST['update_themes'])){
+if(isset($_POST['update_themes'])){ // в случае если обновлена таблица тем
 
-	$data = [];
-	if (!empty($_POST['theme_name'])){
+	$data = []; // инициализируем массив для сбора информации
+
+	// собираем названия тем
+	if (!empty($_POST['theme_name'])){  
 		foreach($_POST['theme_name'] as $key=>$value){
 			$data[$key]['theme_name'] = htmlspecialchars($db->real_escape_string($value));
 		}
 	}
+
+	// собираем записи решений тем
 	if (!empty($_POST['theme_solutions'])){
 		foreach($_POST['theme_solutions'] as $key=>$value){
 			$data[$key]['theme_solutions'] = htmlspecialchars($db->real_escape_string($value));
 		}
 	}
+
+	// собираем темы, который должны быть удалены
 	if (!empty($_POST['delete_theme'])){
 		foreach($_POST['delete_theme'] as $key=>$value){
 
+			// удаляем информацию по этой теме из массива
 			unset($data[$key]);
 
+			// удаляем тему из базы данных
 			$db->query("DELETE FROM `applications_themes` WHERE `id` = $key");
 		}
 	}
 
+	// делаем запросыв БД на обновление записей по данным из массива
 	foreach ($data as $key => $values) {
 		$db->query("UPDATE `applications_themes` SET theme_name = '$values[theme_name]', theme_solutions = '$values[theme_solutions]' WHERE `id` = $key");
 	}
 
-	unset($_POST['update_themes']);
+	unset($_POST['update_themes']); // удаляем индикатор обновления тем
 }
 
-if(isset($_POST['add_theme']) && isset($_POST['theme_name_new'])){
+if(isset($_POST['add_theme']) && isset($_POST['theme_name_new'])){ // в случае добалвения новой темы
+
+	// получаем имя темы из запросы (минимальное условие добавления)
 	$new_theme_name = htmlspecialchars($db->real_escape_string($_POST['theme_name_new']));
+	// инициализируем переменную для решения темы
 	$new_theme_solutions = '';
+
+	// вносим решения темы в переменную, если они были введены
 	if (isset($_POST['theme_solutions_new'])){
 		$new_theme_solutions = htmlspecialchars($db->real_escape_string($_POST['theme_solutions_new']));
 	}
 	
+	// добавляем новую тему в таблицу
 	$db->query("INSERT INTO `applications_themes` (theme_name, theme_solutions) VALUES ('$new_theme_name', '$new_theme_solutions')");
 
-	unset($_POST['add_theme']);
+	unset($_POST['add_theme']); // удаляем индикатор добавления темы
 }
 
-if(isset($_POST['update_organizations'])){
+if(isset($_POST['update_organizations'])){ // в случае обновления таблицы организаций
 
+	// инициализируем массив для хранения данных запроса
 	$data = [];
+
+	//собираем имена организаций
 	if (!empty($_POST['organization_name'])){
 		foreach($_POST['organization_name'] as $key=>$value){
 			$data[$key]['organization_name'] = htmlspecialchars($db->real_escape_string($value));
 		}
 	}
+
+	//собираем адреса организаций
 	if (!empty($_POST['organization_address'])){
 		foreach($_POST['organization_address'] as $key=>$value){
 			$data[$key]['organization_address'] = htmlspecialchars($db->real_escape_string($value));
 		}
 	}
+
+	//собираем контакты организаций
 	if (!empty($_POST['organization_contact'])){
 		foreach($_POST['organization_contact'] as $key=>$value){
 			$data[$key]['organization_contact'] = htmlspecialchars($db->real_escape_string($value));
 		}
 	}
+
+	//собираем организации, которые будут удалены
 	if (!empty($_POST['delete_organization'])){
 		foreach($_POST['delete_organization'] as $key=>$value){
 
+			//удаляем информацию по организации из массива
 			unset($data[$key]);
 
+			//удаляем организацию из таблицы в БД
 			$db->query("DELETE FROM `organizations` WHERE `id` = $key");
 		}
 	}
 
+	// обновляем информацию по каждой организации
 	foreach ($data as $key => $values) {
+
+		// в таблице организаций
 		$db->query("UPDATE `organizations` SET organization_address = '$values[organization_address]', organization_contact = '$values[organization_contact]' WHERE `id` = $key");
 
+		// в таблице заявок
 		$db->query("UPDATE `applications` SET applicant_address = '$values[organization_address]', applicant_contact = '$values[organization_contact]' WHERE `applicant_name` = '$values[organization_name]'");
 	}
 
-	unset($_POST['update_organizations']);
+	unset($_POST['update_organizations']); // удаляем индикатор обновления организаций
 }
 
-if(isset($_POST['update_users'])){
+if(isset($_POST['update_users'])){ // в случае обновления таблицы пользователей
 
+	// инициализируем массив для хранения информации из запроса
 	$data = [];
+
+	//собираем логины
 	if (!empty($_POST['user_name'])){
 		foreach($_POST['user_name'] as $key=>$value){
 			$data[$key]['user_name'] = htmlspecialchars($db->real_escape_string($value));
 		}
 	}
+
+	//собираем пароли (пароли шифруются в формате md5, максимальная длина нового пароля должна быть не больше 25 символов дял корректной работы)
 	if (!empty($_POST['user_password'])){
 		foreach($_POST['user_password'] as $key=>$value){
 			if (strlen($value) > 25) {
@@ -152,95 +207,124 @@ if(isset($_POST['update_users'])){
 			}
 		}
 	}
+
+	//собираем имена пользователей
 	if (!empty($_POST['real_name'])){
 		foreach($_POST['real_name'] as $key=>$value){
 			$data[$key]['real_name'] = htmlspecialchars($db->real_escape_string($value));
 		}
 	}
+
+	// собираем фамилии пользователей
 	if (!empty($_POST['real_surname'])){
 		foreach($_POST['real_surname'] as $key=>$value){
 			$data[$key]['real_surname'] = htmlspecialchars($db->real_escape_string($value));
 		}
 	}
+
+	// собираем личные данные пользователей
 	if (!empty($_POST['personal_data'])){
 		foreach($_POST['personal_data'] as $key=>$value){
 			$data[$key]['personal_data'] = htmlspecialchars($db->real_escape_string($value));
 		}
 	}
+
+	// собираем отделы пользователей
 	if (!empty($_POST['user_department'])){
 		foreach($_POST['user_department'] as $key=>$value){
 			$data[$key]['user_department'] = htmlspecialchars($db->real_escape_string($value));
 		}
 	}
+
+	// собираем пользователей, подлежащих удалению
 	if (!empty($_POST['delete_user'])){
 		foreach($_POST['delete_user'] as $key=>$value){
 
+			// удаляем данные по пользователю из массива
 			unset($data[$key]);
 
+			// удаляем пользователя из БД
 			$db->query("DELETE FROM `users` WHERE `id` = $key");
 		}
 	}
 
+	// обновляем данные по каждому пользователю
 	foreach ($data as $key => $values) {
 		$db->query("UPDATE `users` SET user_name = '$values[user_name]', user_password = '$values[user_password]', real_name = '$values[real_name]', real_surname = '$values[real_surname]', personal_data = '$values[personal_data]', user_department = '$values[user_department]' WHERE `id` = $key");
 	}
 
-	unset($_POST['update_users']);
+	unset($_POST['update_users']); // удаляем индикатор обновления таблицы пользователей
 }
 
-if (isset($_POST['add_user']) && isset($_POST['user_name_new']) && isset($_POST['user_password_new']) && isset($_POST['user_department_new'])){
+if (isset($_POST['add_user']) && isset($_POST['user_name_new']) && isset($_POST['user_password_new']) && isset($_POST['user_department_new'])){ // в случае добавления пользователя (логин, пароль и отдел минимальные данные для добавления)
 
+	// собираем обязательыне данные
 	$new_user_name = htmlspecialchars($db->real_escape_string($_POST['user_name_new']));
 	$new_user_password = htmlspecialchars($db->real_escape_string($_POST['user_password_new']));
 	$new_user_department = htmlspecialchars($db->real_escape_string($_POST['user_department_new']));
+
+	//берем имя из запроса (если есть)
 	if (isset($_POST['real_name_new'])){
 		$new_real_name = htmlspecialchars($db->real_escape_string($_POST['real_name_new']));
 	}
+
+	//берем фамилию из запроса (если есть)
 	if (isset($_POST['real_surname_new'])){
 		$new_real_surname = htmlspecialchars($db->real_escape_string($_POST['real_surname_new']));
 	}
+
+	//берем личные данные из запроса (если есть)
 	if (isset($_POST['personal_data_new'])){
 		$new_personal_data = htmlspecialchars($db->real_escape_string($_POST['personal_data_new']));
 	}
 	
-	
+	// добавляем нового пользователя в таблицу в БД
 	$db->query("INSERT INTO `users` (user_name, user_password, real_name, real_surname, personal_data, user_department) VALUES ('$new_user_name', '$new_user_password', '$new_real_name', '$new_real_surname', '$new_personal_data', '$new_user_department')");
 
-	unset($_POST['add_user']);
+	unset($_POST['add_user']); // удаляем идентификатор добалвения пользователя
 }
 
-if(isset($_POST['update_departments'])){
+if(isset($_POST['update_departments'])){ // в случае обновления таблицы отделов
 
+	// инициализируем массив для сбора информации из запроса
 	$data = [];
+
+	// собираем нозвания отделов
 	if (!empty($_POST['department_name'])){
 		foreach($_POST['department_name'] as $key=>$value){
 			$data[$key]['department_name'] = htmlspecialchars($db->real_escape_string($value));
 		}
 	}
 
+	// собираем отделы,подлежащие удалению
 	if (!empty($_POST['delete_department'])){
 		foreach($_POST['delete_department'] as $key=>$value){
 
+			// удаляем данные по отделу из массива
 			unset($data[$key]);
 
+			// удаляем отдел из таблицы в БД
 			$db->query("DELETE FROM `departments` WHERE `id` = $key");
 		}
 	}
 
+	// обновляем данные по отделам в базе
 	foreach ($data as $key => $values) {
 		$db->query("UPDATE `departments` SET department_name = '$values[department_name]' WHERE `id` = $key");
 	}
 
-	unset($_POST['update_departments']);
+	unset($_POST['update_departments']); // удаляем индикатор обновления отделов
 }
 
-if (isset($_POST['add_department']) && isset($_POST['department_name_new'])){
+if (isset($_POST['add_department']) && isset($_POST['department_name_new'])){ // в случае добавления нового отдела (должно быть указано название)
 
+	// берем имя нового отдела из запроса
 	$new_department_name = htmlspecialchars($db->real_escape_string($_POST['department_name_new']));
 
+	// добавляем отдел в таблицу отделов
 	$db->query("INSERT INTO `departments` (department_name) VALUES ('$new_department_name')");
 
-	unset($_POST['add_department']);
+	unset($_POST['add_department']); // удаляем индикатор добавления отдела
 }
 
 
@@ -303,20 +387,25 @@ if (isset($_POST['add_department']) && isset($_POST['department_name_new'])){
 </head>
 <body>
 	<?php 
-		if (isset($user_id) && $user_id == 1): 
+		if (isset($user_id) && $user_id == 1):  // показываем интерйес толкь оесли пользователь залогинен
+
+			//> делаем запросы во все таблицы
 			$all_applications =  $db->query("SELECT * FROM `applications`");
 			$all_applications_archive =  $db->query("SELECT * FROM `applications_archive`");
 			$departments_query = $db->query("SELECT * FROM `departments`");
 			$themes_query = $db->query("SELECT * FROM `applications_themes`");
 			$organizations_query = $db->query("SELECT * FROM `organizations`");
 			$users_query = $db->query("SELECT * FROM `users`");
+			//<
 
+			//> добавляем информацию из запросов в ассоциативные массивы
+			// темы заявок
 			$themes = [];
 			while ($row = $themes_query->fetch_assoc()){
 				$themes [$row['id']]['theme_name'] = $row['theme_name'];
 				$themes [$row['id']]['theme_solutions'] = $row['theme_solutions'];
 			}
-
+			// организации
 			$organizations = [];
 			while ($row = $organizations_query->fetch_assoc()){
 				$organizations [$row['id']]['organization_name'] = $row['organization_name'];
@@ -324,6 +413,7 @@ if (isset($_POST['add_department']) && isset($_POST['department_name_new'])){
 				$organizations [$row['id']]['organization_contact'] = $row['organization_contact'];
 			} 
 
+			//пользователи
 			$users = [];
 			while ($row = $users_query->fetch_assoc()){
 				if ($row['id'] == 1){
@@ -337,6 +427,7 @@ if (isset($_POST['add_department']) && isset($_POST['department_name_new'])){
 				$users [$row['id']]['user_department'] = $row['user_department'];
 			} 
 
+			//отделы (иерархически отделы с пользователями)
 			$departments = [];
 			while ($row = $departments_query->fetch_assoc()){
 
@@ -349,6 +440,7 @@ if (isset($_POST['add_department']) && isset($_POST['department_name_new'])){
 					$departments[$row['id']]['employees'][$row_user['id']] = $employee_name;
 				}
 			}
+			//<
 	?>
 	
 	<div class="jumbotron" style="position: absolute; top: 10%; left: 2%; width: 95%;">
@@ -377,13 +469,16 @@ if (isset($_POST['add_department']) && isset($_POST['department_name_new'])){
 					<th>Текст заявки</th>
 				</tr>
 				<?php
-
+				
+				// инициализируем массив для сбора заявок (для формы перевода на сотрудника/отдел)
 				$applications_ids = [];
 
 			 	while($row = $all_applications->fetch_assoc()) {
+
+			 		//добавляем заявку в массив
 			 		$applications_ids[] = $row['id'];
 
-					switch ($row['application_status']) {
+					switch ($row['application_status']) { // определяем статус заявки
 						case '0':
 							$status = 'Принята';
 							break;
@@ -401,16 +496,20 @@ if (isset($_POST['add_department']) && isset($_POST['department_name_new'])){
 							break;
 					}
 
-				
+					// запрашвиаем отдел ответственного сотрудника из базы
 					$user = $db->query("SELECT `user_department` FROM `users` WHERE `id` = '$row[assigned_employee]'");
 					$user = $user->fetch_assoc();
 
+					// берем имя ответственного из массива
 					$user_name = $departments[$user['user_department']]['employees'][$row['assigned_employee']];
 
+					// берем отдел ответственного сотрудника из массива
 					$user_department = $departments[$user['user_department']]['name'];
 
+					// берем тему заявки
 					$theme = $themes[$row['application_theme']]['theme_name'];
 
+					// добавляем новую строку в таблицу на странице
 					echo "<tr>
 							<td>$row[id]</td>
 							<td>$status</td>
@@ -431,7 +530,7 @@ if (isset($_POST['add_department']) && isset($_POST['department_name_new'])){
 				<label for="app_id">Заявка №</label>
 				<select id="app_id" name="app_id">
 					<option>Выбрать</option>
-					<?php foreach ($applications_ids as $id) { ?>
+					<?php foreach ($applications_ids as $id) { // добалвяем опции только с номерами, которые естьв таблице?>
 						<option value="<?=$id?>"><?=$id?></option>
 					<?php } ?>
 				</select> :
@@ -440,7 +539,7 @@ if (isset($_POST['add_department']) && isset($_POST['department_name_new'])){
 				<label for="new_app_depart">Перевести на: </label>
 				<select id="new_app_depart" name="new_app_depart">
 					<option value="-1">Выбрать</option>
-					<?php foreach($departments as $id => $department){ ?>
+					<?php foreach($departments as $id => $department){ // добавляем опции по сотрудникам и отделам, сгруппированные по отделам?>
 							<optgroup label="<?=$department['name']?>">
 								<option value="dep_<?=$id?>"><?=$department['name']?> (любой сотрудник)</option>
 								<?php foreach ($department['employees'] as $key => $name) { ?>
@@ -469,13 +568,15 @@ if (isset($_POST['add_department']) && isset($_POST['department_name_new'])){
 					<th>Текст заявки</th>
 				</tr>
 				<?php
-
+				// инициализируем массив дял сбора id заявок из архива (для восстановления)
 				$applications_ids = [];
 
 			 	while($row = $all_applications_archive->fetch_assoc()) {
+
+			 		// добавляем номер заявки в массив
 			 		$applications_ids[] = $row['id'];
 
-					switch ($row['application_status']) {
+					switch ($row['application_status']) { // определяем статус заявки
 						case '0':
 							$status = 'Принята';
 							break;
@@ -493,14 +594,18 @@ if (isset($_POST['add_department']) && isset($_POST['department_name_new'])){
 							break;
 					}
 
+					//запрашиваем отдел ответственного по заявке сотрудника
 					$user = $db->query("SELECT `user_department` FROM `users` WHERE `id` = '$row[assigned_employee]'");
 					$user = $user->fetch_assoc();
 
+					// берем имя ответственного сотрудника из массива
 					$user_name = $departments[$user['user_department']]['employees'][$row['assigned_employee']];
+					// берем отдел ответственного сотрудника из массива
 					$user_department = $departments[$user['user_department']]['name'];
-
+					// берем тему заявки
 					$theme = $themes[$row['application_theme']]['theme_name'];
 
+					// добавляем новую строку в таблицу архива на странице
 					echo "<tr>
 							<td>$row[id]</td>
 							<td>$status</td>
@@ -522,7 +627,7 @@ if (isset($_POST['add_department']) && isset($_POST['department_name_new'])){
 				<label for="arch_app_id">Заявка №</label>
 				<select id="arch_app_id" name="arch_app_id">
 					<option>Выбрать</option>
-					<?php foreach ($applications_ids as $id) { ?>
+					<?php foreach ($applications_ids as $id) { // добавляем в вбор только номера из таблицы?>
 						<option value="<?=$id?>"><?=$id?></option>
 					<?php } ?>
 				</select> :
@@ -542,7 +647,7 @@ if (isset($_POST['add_department']) && isset($_POST['department_name_new'])){
 						<th>Способы решения</th>
 						<th>Удалить</th>
 					</tr>
-					<?php foreach ($themes as $key => $values) { ?>
+					<?php foreach ($themes as $key => $values) { // для каждой темы добавляем на страницу строку в таблице с редактируемыми полями (кроме id)?>
 							<tr>
 								<td><?=$key?></td>
 								<td><input style="width: 100%" type="text" name="theme_name[<?=$key?>]" value="<?=$values['theme_name']?>"></td>
@@ -585,7 +690,7 @@ if (isset($_POST['add_department']) && isset($_POST['department_name_new'])){
 						<th>Контакт</th>
 						<td>Удалить</td>
 					</tr>
-					<?php foreach ($organizations as $key => $values) { ?>
+					<?php foreach ($organizations as $key => $values) { // для каждой организации добавляем на страницу строку в таблице с редактируемыми полями (кроме id и названия)?>
 							<tr>
 								<td><?=$key?></td>
 								<td><input type="hidden" name="organization_name[<?=$key?>]" value="<?=$values['organization_name']?>"><?=$values['organization_name']?></td>
@@ -615,7 +720,7 @@ if (isset($_POST['add_department']) && isset($_POST['department_name_new'])){
 						<th>Отдел</th>
 						<th>Удалить</th>
 					</tr>
-					<?php foreach ($users as $key => $values) { ?>
+					<?php foreach ($users as $key => $values) { // для каждого сотрудника добавляем на страницу строку в таблице с редактируемыми полями (кроме id)?>
 							<tr>
 								<td><?=$key?></td>
 								<td><input style="width: 100%" type="text" name="user_name[<?=$key?>]" value="<?=$values['user_name']?>"></td>
@@ -680,7 +785,7 @@ if (isset($_POST['add_department']) && isset($_POST['department_name_new'])){
 						<th>Название</th>
 						<th>Удалить</th>
 					</tr>
-					<?php foreach ($departments as $key => $values) { ?>
+					<?php foreach ($departments as $key => $values) { // для каждой темы добавляем на страницу строку в таблице с редактируемым полем названия (кроме id)?>
 							<tr>
 								<td><?=$key?></td>
 								<td><input style="width: 100%" type="text" name="department_name[<?=$key?>]" value="<?=$values['name']?>"></td>
@@ -704,7 +809,7 @@ if (isset($_POST['add_department']) && isset($_POST['department_name_new'])){
 			</form>	
 		</div>
 
-		<?php else: ?>
+		<?php else: // если страница открыта не авторизованным пользователем, ничего не показываем?>
 		<h1>Извините, у вас нет доступа к данной странице.</h1>
 		<?php endif; ?>
 </body>
