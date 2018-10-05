@@ -260,7 +260,11 @@ if (isset($_POST['add_user']) && isset($_POST['user_name_new']) && isset($_POST[
 
 	// собираем обязательыне данные
 	$new_user_name = htmlspecialchars($db->real_escape_string($_POST['user_name_new']));
-	$new_user_password = htmlspecialchars($db->real_escape_string($_POST['user_password_new']));
+	if(strlen($_POST['user_password_new']) > 25){
+		$new_user_password = htmlspecialchars($db->real_escape_string($_POST['user_password_new']));
+	} else {
+		$new_user_password = md5($_POST['user_password_new']);
+	}
 	$new_user_department = htmlspecialchars($db->real_escape_string($_POST['user_department_new']));
 
 	//берем имя из запроса (если есть)
